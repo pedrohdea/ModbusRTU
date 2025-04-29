@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Compilar todos os .c",
+      "type": "shell",
+      "command": "gcc",
+      "args": [
+        "*.c",
+        "-o",
+        "mestre",
+        "-g"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "detail": "Compila todos os arquivos .c do diretório"
+    }
+  ]
+}
