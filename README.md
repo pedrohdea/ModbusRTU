@@ -104,7 +104,7 @@ Nas I/Os do Arduino serão conectados potenciômetros e LEDs, de acordo com a ap
 
 ---
 
-## Entrega e Apresentação
+### 4. Entrega e Apresentação
 - **Data da apresentação**: 06/05/2025
 - **Nota**: 7 pontos de N1
 - **Apresentação**:

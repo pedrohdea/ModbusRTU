@@ -169,5 +169,12 @@ int leRespostaCompleta(SerialPort *s, char *buffer, int tamanhoEsperado, int tim
     }
 
     printf("📥 Total de bytes recebidos: %d\n", total);
+    unsigned short crc_resp = buffer[total - 2] | (buffer[total - 1] << 8);
+    unsigned short crc_calc = CRC16(buffer, total - 2);
+
+    if (crc_resp == crc_calc)
+        printf("✅ CRC OK.\n");
+    else
+        printf("❌ CRC inválido. Calc: 0x%04X, Resp: 0x%04X\n", crc_calc, crc_resp);
     return total;
 }

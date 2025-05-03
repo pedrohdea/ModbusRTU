@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "menu.h"
 #include "teste.h"
+#include "writecoils.h"
+
 
 void mostrarMenu() {
     printf("=========================================\n");
@@ -18,14 +20,15 @@ void mostrarMenu() {
 int main() {
     char opcao;
 
-    mostrarMenu();
     do {
+        mostrarMenu();
         printf("Digite a opção desejada: ");
         scanf(" %c", &opcao);  // espaço ignora ENTER anterior
 
         switch (opcao) {
             case '1':
-                escreverMultiplosCoils();
+                printf("[Opção 1] Escrever múltiplos coils selecionada.\n");
+                escreverMultiplosCoils(); // writecoils.h
                 break;
             case '2':
                 enviarEnderecoInvalido();

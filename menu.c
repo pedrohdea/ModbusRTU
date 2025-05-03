@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include "menu.h"
 
-void escreverMultiplosCoils() {
-    printf("[Opção 1] Escrever múltiplos coils selecionada.\n");
-}
 
 void enviarEnderecoInvalido() {
     printf("[Opção 2] Enviar comando com endereço inválido selecionado.\n");

@@ -19,8 +19,8 @@ int teste() {
         return EXIT_FAILURE;
     }
 
-    // Monta requisição Modbus: 01 05 00 02 FF 00 + CRC
-    char req[TAMANHO_FRAME] = {0x01, 0x05, 0x00, 0x02, 0xFF, 0x00};
+    // Monta requisição Modbus: 01 0E 00 02 FF 00 + CRC
+    char req[TAMANHO_FRAME] = {0x01, 0x0E, 0x00, 0x02, 0xFF, 0x00};
     unsigned short crc = CRC16(req, 6);
     req[6] = crc & 0xFF;
     req[7] = crc >> 8;
