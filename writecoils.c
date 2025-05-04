@@ -7,8 +7,7 @@
 
 #define PORTA_COM "/dev/ttyUSB0"
 #define BAUDRATE 9600
-#define TIMEOUT_MS 1000
-
+#define TIMEOUT_INTERBYTE_MS 4  // 3.5 bytes @ 9600bps ≈ 4ms
 
 int posicaoParaIndice(char coluna, char linha) {
     coluna = toupper(coluna);
@@ -39,49 +38,48 @@ void escreverMultiplosCoils() {
     int quantidade = fim - inicio + 1;
     int byteCount = (quantidade + 7) / 8;
 
-    unsigned char dados[8] = {0};  // máximo 64 bits
+    if (quantidade > 64) {
+        printf("❌ Máximo de 64 coils por requisição.\n");
+        return;
+    }
+
+    unsigned char dados[8] = {0};
     for (int i = 0; i < quantidade; i++) {
-        int bit = i;
-        dados[bit / 8] |= (1 << (bit % 8));
+        dados[i / 8] |= (1 << (i % 8));  // LSB-first (padrão Modbus)
     }
 
     unsigned char req[260] = {0};
     req[0] = 0x01;                         // ID Escravo
     req[1] = 0x0F;                         // Função
-    req[2] = (inicio >> 8) & 0xFF;         // Addr High
-    req[3] = inicio & 0xFF;                // Addr Low
-    req[4] = (quantidade >> 8) & 0xFF;     // Qtd coils High
-    req[5] = quantidade & 0xFF;            // Qtd coils Low
+    req[2] = (inicio >> 8) & 0xFF;
+    req[3] = inicio & 0xFF;
+    req[4] = (quantidade >> 8) & 0xFF;
+    req[5] = quantidade & 0xFF;
     req[6] = byteCount;
-
     memcpy(&req[7], dados, byteCount);
 
-    unsigned short crc = CRC16(req, 7 + byteCount);
+    unsigned short crc = CRC16((char *)req, 7 + byteCount);
     req[7 + byteCount] = crc & 0xFF;
     req[8 + byteCount] = crc >> 8;
 
     int total = 9 + byteCount;
 
-    SerialPort s;
-    if (!serialOpen(&s, PORTA_COM, BAUDRATE, 8, NOPARITY, TWOSTOPBITS)) {
-        fprintf(stderr, "Erro ao abrir porta serial.\n");
+    if (!serialOpen(PORTA_COM, BAUDRATE, 8, NOPARITY, TWOSTOPBITS)) {
+        fprintf(stderr, "❌ Erro ao abrir porta serial.\n");
         return;
     }
 
+
     printf("📤 Enviando: ");
-    exibeDados(req, total);
-    serialPutBytes(&s, req, total);
+    exibeDados((char *)req, total);
+    serialWrite((char *)req, total);
 
-    unsigned char buffer[20] = {0};
-    int recebidos = leRespostaCompleta(&s, buffer, 8, TIMEOUT_MS);
-
-    if (recebidos == 8) {
-        printf("📥 Resposta: ");
-        exibeDados(buffer, recebidos);
-
+    char *resposta = lerResposta();
+    if (resposta) {
+        printf("✅ Resposta válida recebida.\n");
     } else {
-        printf("⚠️ Sem resposta ou resposta incompleta (%d bytes).\n", recebidos);
+        printf("❌ Nenhuma resposta válida.\n");
     }
 
-    serialClose(&s);
+    serialClose();
 }

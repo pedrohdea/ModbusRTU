@@ -163,7 +163,7 @@ void loop() {
       if (receivedData[0] == endereco_escravo || receivedData[0] == 0) {
         if (receivedData[1] == 0x0F) {  // Função 0x0F - Write Multiple Coils
           funcaoWriteMultipleCoils(receivedData);
-        } else if (receivedData[1] == 0x05) {
+        } else if (receivedData[1] == 0x0E) {
           enviaFrame(receivedData, tam, "função eco");
         } else {
           funcaoInvalida(receivedData);

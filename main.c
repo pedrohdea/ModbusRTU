@@ -3,6 +3,8 @@
 #include "teste.h"
 #include "writecoils.h"
 
+#define PORTA_COM "/dev/ttyUSB0"
+#define BAUDRATE 9600
 
 void mostrarMenu() {
     printf("=========================================\n");

@@ -1,18 +1,41 @@
-// serial.c - implementação Linux
 #include "serial.h"
-#include <errno.h>
-#include <time.h>
+#include "crc16.h"
+
+#include <sys/time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+#include <errno.h>
 
-int serialOpen(SerialPort *s, const char *portname, int baudrate, int databits, int parity, int stopbits)
+
+
+unsigned long millis_now() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec * 1000UL) + (tv.tv_usec / 1000UL);
+}
+SerialPort portaSerial; // variável global
+
+int serialOpen(const char *portname, int baudrate, int databits, int parity, int stopbits)
 {
-    s->fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
-    if (s->fd < 0)
+    portaSerial.fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+    if (portaSerial.fd < 0)
+    {
+        perror("Erro ao abrir porta serial");
         return 0;
+    }
 
-    memset(&s->tty, 0, sizeof(s->tty));
-    if (tcgetattr(s->fd, &s->tty) != 0)
+    memset(&portaSerial.tty, 0, sizeof(portaSerial.tty));
+    if (tcgetattr(portaSerial.fd, &portaSerial.tty) != 0)
+    {
+        perror("Erro em tcgetattr");
+        close(portaSerial.fd);
         return 0;
+    }
 
     speed_t speed;
     switch (baudrate)
@@ -33,72 +56,61 @@ int serialOpen(SerialPort *s, const char *portname, int baudrate, int databits, 
         speed = B115200;
         break;
     default:
+        fprintf(stderr, "Baudrate inválido. Usando 9600.\n");
         speed = B9600;
     }
 
-    cfsetospeed(&s->tty, speed);
-    cfsetispeed(&s->tty, speed);
+    cfsetospeed(&portaSerial.tty, speed);
+    cfsetispeed(&portaSerial.tty, speed);
 
-    s->tty.c_cflag = (s->tty.c_cflag & ~CSIZE);
-    switch (databits)
-    {
-    case 7:
-        s->tty.c_cflag |= CS7;
-        break;
-    case 8:
-    default:
-        s->tty.c_cflag |= CS8;
-        break;
-    }
+    portaSerial.tty.c_cflag &= ~CSIZE;
+    portaSerial.tty.c_cflag |= (databits == 7) ? CS7 : CS8;
 
     switch (parity)
     {
     case PARITY_EVEN:
-        s->tty.c_cflag |= PARENB;
-        s->tty.c_cflag &= ~PARODD;
+        portaSerial.tty.c_cflag |= PARENB;
+        portaSerial.tty.c_cflag &= ~PARODD;
         break;
     case PARITY_ODD:
-        s->tty.c_cflag |= PARENB;
-        s->tty.c_cflag |= PARODD;
+        portaSerial.tty.c_cflag |= PARENB;
+        portaSerial.tty.c_cflag |= PARODD;
         break;
-    case NOPARITY:
     default:
-        s->tty.c_cflag &= ~PARENB;
+        portaSerial.tty.c_cflag &= ~PARENB;
         break;
     }
 
-    switch (stopbits)
+    if (stopbits == TWOSTOPBITS)
+        portaSerial.tty.c_cflag |= CSTOPB;
+    else
+        portaSerial.tty.c_cflag &= ~CSTOPB;
+
+    portaSerial.tty.c_cflag |= CREAD | CLOCAL;
+    portaSerial.tty.c_lflag = 0;
+    portaSerial.tty.c_iflag = 0;
+    portaSerial.tty.c_oflag = 0;
+    portaSerial.tty.c_cc[VMIN] = 0;
+    portaSerial.tty.c_cc[VTIME] = 1; //VTIME = 1 → read() espera até 100 ms por um byte.
+
+    if (tcsetattr(portaSerial.fd, TCSANOW, &portaSerial.tty) != 0)
     {
-    case TWOSTOPBITS:
-        s->tty.c_cflag |= CSTOPB;
-        break;
-    case ONESTOPBIT:
-    default:
-        s->tty.c_cflag &= ~CSTOPB;
-        break;
-    }
-
-    s->tty.c_cflag |= CREAD | CLOCAL;
-    s->tty.c_lflag = 0;
-    s->tty.c_iflag = 0;
-    s->tty.c_oflag = 0;
-    s->tty.c_cc[VMIN] = 0;
-    s->tty.c_cc[VTIME] = 10;
-
-    if (tcsetattr(s->fd, TCSANOW, &s->tty) != 0)
+        perror("Erro em tcsetattr");
+        close(portaSerial.fd);
         return 0;
+    }
 
     return 1;
 }
 
-int serialPutBytes(SerialPort *s, const char *data, int length)
+int serialWrite(const char *data, int length)
 {
-    return write(s->fd, data, length);
+    return write(portaSerial.fd, data, length);
 }
 
-int serialClose(SerialPort *s)
+int serialClose(void)
 {
-    return close(s->fd) == 0;
+    return close(portaSerial.fd) == 0;
 }
 
 void exibeDados(const char *buffer, int length)
@@ -110,71 +122,66 @@ void exibeDados(const char *buffer, int length)
     printf("\n");
 }
 
-int recebeResposta(SerialPort *s, char *buffer, int baudrate)
-{
-    int total = 0;
-    int timeout_ms = 2000; // 2 segundos
-    clock_t start = clock();
 
-    while (((clock() - start) * 1000 / CLOCKS_PER_SEC) < timeout_ms)
+char *lerResposta(void)
+{
+    static char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+
+    int bytesRecebidos = 0;
+    unsigned long inicio = millis_now();
+    unsigned long ultimoByte = inicio;
+
+    printf("🔍 Aguardando frame até %lu ms...\n", inicio + TIMEOUT_TOTAL_MS);
+
+    while (1)
     {
-        int n = read(s->fd, buffer + total, 1);
+        int n = read(portaSerial.fd, buffer + bytesRecebidos, 1);
+        unsigned long agora = millis_now();
+
         if (n > 0)
         {
-            total += n;
-            if (total >= 5 && buffer[1] != 0x05)
-                break; // suposição simples
-        }
-    }
-
-    return total;
-}
-
-int leRespostaCompleta(SerialPort *s, char *buffer, int tamanhoEsperado, int timeout_ms)
-{
-    int total = 0;
-    clock_t start = clock();
-    long timeout_ticks = (timeout_ms * CLOCKS_PER_SEC) / 1000;
-
-    printf("\n🔍 Aguardando resposta (%d bytes)...\n", tamanhoEsperado);
-
-    while (total < tamanhoEsperado)
-    {
-        clock_t now = clock();
-
-        int n = read(s->fd, buffer + total, tamanhoEsperado - total);
-        if (n > 0)
-        {
-            for (int i = 0; i < n; i++)
-            {
-                printf("[+%ld ticks] Byte %d: 0x%02X (%c)\n",
-                       (long)(now - start),
-                       total + i,
-                       (unsigned char)buffer[total + i],
-                       isprint((unsigned char)buffer[total + i]) ? buffer[total + i] : '.');
-            }
-            total += n;
-            start = clock(); // reinicia timeout a cada byte recebido
+            ultimoByte = agora;
+            bytesRecebidos += n;
         }
         else
         {
-            if ((now - start) > timeout_ticks)
-            {
-                printf("⏱️ Timeout de %dms atingido.\n", timeout_ms);
+            if ((agora - ultimoByte) >= TIMEOUT_INTERBYTE_MS && bytesRecebidos > 0)
                 break;
+
+            if ((agora - inicio) >= TIMEOUT_TOTAL_MS)
+            {
+                printf("⏱️ Timeout global de %lu ms atingido.\n", agora - inicio);
+                return NULL;
             }
-            printf("[nada]\n");
-            usleep(100); // aguarda para não travar CPU
+
+            usleep(100); // evita CPU 100%
         }
     }
 
-    printf("📥 Total de bytes recebidos: %d\n", total);
-    unsigned short crc_resp = buffer[total - 2] | (buffer[total - 1] << 8);
-    unsigned short crc_calc = CRC16(buffer, total - 2);
+    if (bytesRecebidos < 5)
+    {
+        printf("⚠️ Resposta muito curta (%d bytes).\n", bytesRecebidos);
+        return NULL;
+    }
 
-    if (crc_resp == crc_calc)
-        printf("✅ CRC OK.\n");
-    else
-        printf("❌ CRC inválido. Calc: 0x%04X, Resp: 0x%04X\n", crc_calc, crc_resp);
-    return total;
+    unsigned short crc_resp = (unsigned char)buffer[bytesRecebidos - 2] |
+                              ((unsigned char)buffer[bytesRecebidos - 1] << 8);
+    unsigned short crc_calc = CRC16(buffer, bytesRecebidos - 2);
+
+    if (crc_resp != crc_calc)
+    {
+        printf("❌ CRC inválido");
+        return NULL;
+    }
+
+    if (buffer[1] & 0x80)
+    {
+        printf("❗ Exceção Modbus recebida: Código 0x%02X\n", buffer[2]);
+        return NULL;
+    }
+
+    printf("📥 Resposta recebida (%d bytes): ", bytesRecebidos);
+    exibeDados(buffer, bytesRecebidos);
+    return buffer;
 }

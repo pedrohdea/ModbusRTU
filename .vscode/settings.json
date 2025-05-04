@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "ostream": "c"
+        "ostream": "c",
+        "errno.h": "c",
+        "crc16.h": "c"
     }
 }
