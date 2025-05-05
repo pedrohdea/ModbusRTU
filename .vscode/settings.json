@@ -2,6 +2,7 @@
     "files.associations": {
         "ostream": "c",
         "errno.h": "c",
-        "crc16.h": "c"
+        "crc16.h": "c",
+        "string.h": "c"
     }
 }

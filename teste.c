@@ -10,6 +10,11 @@
 #define STOPBITS TWOSTOPBITS
 #define TAMANHO_FRAME 8
 
+// int teste_leds(){
+//     // comando de A2H8;
+//     escreverMultiplosCoils();
+// }
+
 int teste() {
     if (!serialOpen(PORTA_COM, BAUDRATE, 8, NOPARITY, TWOSTOPBITS)) {
         fprintf(stderr, "❌ Erro ao abrir porta serial.\n");

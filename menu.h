@@ -1,7 +1,7 @@
 #ifndef MENU_H
 #define MENU_H
 
-void escreverMultiplosCoils();
+void sendPosicao();
 void enviarEnderecoInvalido();
 void enviarFuncaoInvalida();
 void enviarRegistradorInvalido();

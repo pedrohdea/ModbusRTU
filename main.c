@@ -2,14 +2,18 @@
 #include "menu.h"
 #include "teste.h"
 #include "writecoils.h"
+#include "mapa.h"
 
 #define PORTA_COM "/dev/ttyUSB0"
 #define BAUDRATE 9600
 
-void mostrarMenu() {
+void mostrarHeader() {
     printf("=========================================\n");
-    printf("        MODBUS RTU MASTER - MENU\n");
+    printf("MODBUS RTU MASTER - PEDRO HENRIQUE DE ASSUMPÇÃO\n");
     printf("=========================================\n\n");
+}
+
+void mostrarMenu() {
     printf("1. Escrever múltiplos coils (0x0F)\n");
     printf("2. Enviar comando com endereço inválido (teste de timeout)\n");
     printf("3. Enviar função inválida (teste de exceção 01)\n");
@@ -20,6 +24,8 @@ void mostrarMenu() {
 }
 
 int main() {
+    mostrarHeader();
+    
     char opcao;
 
     do {
@@ -30,7 +36,7 @@ int main() {
         switch (opcao) {
             case '1':
                 printf("[Opção 1] Escrever múltiplos coils selecionada.\n");
-                escreverMultiplosCoils(); // writecoils.h
+                sendPosicao(); // writecoils.h
                 break;
             case '2':
                 enviarEnderecoInvalido();
@@ -51,6 +57,9 @@ int main() {
             case 't':
                 teste();
                 break;
+            case 'l':
+            case 'L':
+                testeMapaCoils();
             case 'x':
             case 'X':
                 printf("Saindo do programa...\n");
