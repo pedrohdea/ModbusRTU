@@ -124,3 +124,50 @@ Nas I/Os do Arduino serão conectados potenciômetros e LEDs, de acordo com a ap
 | Req 1 | Req 2 | Req 3 | Req 4 | Nota |
 |:-----:|:-----:|:-----:|:-----:|:----:|
 |   1   |   3   |   2   |   1   |  7   |
+
+# Passo-a-passo detalhado do projeto ModbusRTU com matriz de LEDs
+
+1. **Usuário abre o programa MESTRE**  
+   O software em C para Linux é executado no terminal pelo usuário.
+
+2. **Navega no menu do terminal**  
+   Um menu interativo com opções de controle da matriz de LEDs é exibido.
+
+3. **Seleciona a opção 1**  
+   O usuário escolhe a função de envio de comando para acender LEDs.
+
+4. **Informa a posição de xadrez desejada (ex: D4)**  
+   O programa converte essa posição em um padrão de bits correspondente aos LEDs que devem acender.
+
+5. **Gera os bytes de dados dos coils (`resultadoA` e `resultadoB`)**  
+   O padrão de 16 bits é dividido em dois bytes, representando os estados dos LEDs.
+
+6. **Monta o quadro Modbus RTU (função 0x0F)**  
+   O mestre constrói o quadro com endereço do escravo, função, quantidade de coils e dados.
+
+7. **Calcula o CRC16 e adiciona ao quadro**  
+   Um código de verificação (CRC) é gerado usando a biblioteca `crc16.h` e anexado ao final do quadro.
+
+8. **Envia o quadro pela interface serial RS-485**  
+   O mestre transmite o quadro pela porta `/dev/ttyUSB0` para o Arduino escravo.
+
+9. **Inicia contagem de tempo (timeout)**  
+   A função `millis_now()` é usada para garantir que a resposta do escravo chegue em tempo hábil.
+
+10. **ESCRAVO (Arduino) recebe e valida o quadro**  
+    O Arduino verifica o endereço, função e CRC para confirmar se o quadro é válido e para ele.
+
+11. **Escravo interpreta os dados e atualiza os LEDs**  
+    Os bytes recebidos (`resultadoA` e `resultadoB`) são usados para acender os LEDs correspondentes na matriz 8x8.
+
+12. **Escravo monta e envia resposta Modbus**  
+    O Arduino responde com um quadro de confirmação contendo os dados esperados.
+
+13. **Mestre recebe a resposta e verifica o CRC**  
+    O software mestre valida a integridade da resposta com novo cálculo de CRC.
+
+14. **Mestre exibe mensagem de sucesso (“OK”)**  
+    Se a resposta for válida, o terminal exibe que os LEDs foram atualizados com sucesso.
+
+15. **(Opcional) Tratamento de falhas**  
+    Se o tempo de resposta for excedido ou o CRC estiver errado, o mestre exibe erro e permite nova tentativa.
