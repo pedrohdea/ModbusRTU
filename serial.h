@@ -14,7 +14,7 @@
 
 // Timeout padrão (ms)
 #define TIMEOUT_INTERBYTE_MS 4
-#define TIMEOUT_TOTAL_MS     3000 //3seg
+#define TIMEOUT_TOTAL_MS     10000 //10seg
 
 // Estrutura da porta
 typedef struct {

@@ -38,6 +38,7 @@ void blink(int sec) {
 }
 
 void setup() {
+  // TODO: abrir duas portas, uma para debug e outra para comunicação
   Serial.begin(BAUDRATE, SERIAL_8N2);
   Serial.println("V0.3");
 

@@ -11,7 +11,7 @@
 #include <time.h>
 #include <errno.h>
 
-#define PORTA_COM "/dev/ttyUSB0"
+#define PORTA_COM "/dev/ttyUSB0" // TODO: deixar variavel configurada
 #define BAUDRATE 9600
 
 unsigned long millis_now() {
@@ -152,7 +152,7 @@ char *lerResposta(void)
 
             if ((agora - inicio) >= TIMEOUT_TOTAL_MS)
             {
-                printf("⏱️ Timeout global de %lu ms atingido.\n", agora - inicio);
+                printf("⏱️  Timeout global de %lu ms atingido.\n", agora - inicio);
                 return NULL;
             }
 

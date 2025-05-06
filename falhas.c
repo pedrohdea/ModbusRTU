@@ -9,7 +9,7 @@
  * Envia uma mensagem Modbus com funcao invalida (0x01)
  */
 void enviarFuncaoInvalida(void) {
-    uint8_t req[4] = {0x01, 0xFF};  // ID e funcao inexistente
+    uint8_t req[4] = {0x01, 0x01};  // ID e funcao inexistente
     unsigned short crc = CRC16(req, 2);
     req[2] = crc & 0xFF;
     req[3] = crc >> 8;

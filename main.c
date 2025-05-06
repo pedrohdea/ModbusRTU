@@ -20,6 +20,7 @@ void mostrarMenu() {
     printf("4. Enviar registrador inválido (teste de exceção 02)\n");
     printf("5. Enviar valor inválido (teste de exceção 03)\n");
     printf("6. Enviar quadro com CRC inválido (teste de erro de integridade)\n");
+    // TODO: Criar opção de conguração das variaveis globais como BAUDRATE, ENDEREÇO, TIMEOUT, etc
     printf("x. Sair\n\n");
 }
 
@@ -58,6 +59,7 @@ int main() {
                 printf("\n6. Enviar quadro com CRC inválido (teste de erro de integridade)\n");
                 enviarCRCInvalido();
                 break;
+            // funções internas para teste e desenvolvimento. Poderia ser deativadas com DEBUG=False
             case 'T':
             case 't':
                 printf("\nTeste Fixo\n");
