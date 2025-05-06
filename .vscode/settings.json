@@ -5,6 +5,8 @@
         "crc16.h": "c",
         "string.h": "c",
         "stdint.h": "c",
-        "mapa.h": "c"
+        "mapa.h": "c",
+        "stdio.h": "c",
+        "serial.h": "c"
     }
 }

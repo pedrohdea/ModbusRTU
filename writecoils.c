@@ -52,27 +52,8 @@ int escreverMultiplosCoils(int inicio, int quantidade, int byteCount, const unsi
 
     int total = 9 + byteCount;
 
-    if (!serialOpen(PORTA_COM, BAUDRATE, 8, NOPARITY, TWOSTOPBITS))
-    {
-        fprintf(stderr, "❌ Erro ao abrir porta serial.\n");
-        return 0;
-    }
+    modbusWrite((const char *)req, total);
 
-    printf("📤 Enviando: ");
-    exibeDados((const char *)req, total);
-    serialWrite((const char *)req, total);
-
-    char *resposta = lerResposta();
-    if (resposta)
-    {
-        printf("✅ Resposta válida recebida.\n");
-    }
-    else
-    {
-        printf("❌ Nenhuma resposta válida.\n");
-    }
-
-    serialClose();
     return 1;
 }
 

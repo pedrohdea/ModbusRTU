@@ -32,5 +32,6 @@ int serialClose(void);
 
 void exibeDados(const char *buffer, int length);
 char *lerResposta(void);
+int modbusWrite(const char *req, int total);
 
 #endif

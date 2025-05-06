@@ -11,7 +11,8 @@
 #include <time.h>
 #include <errno.h>
 
-
+#define PORTA_COM "/dev/ttyUSB0"
+#define BAUDRATE 9600
 
 unsigned long millis_now() {
     struct timeval tv;
@@ -184,4 +185,30 @@ char *lerResposta(void)
     printf("📥 Resposta recebida (%d bytes): ", bytesRecebidos);
     exibeDados(buffer, bytesRecebidos);
     return buffer;
+}
+
+int modbusWrite(const char *req, int total) {
+    if (!serialOpen(PORTA_COM, BAUDRATE, 8, NOPARITY, TWOSTOPBITS)) {
+        fprintf(stderr, "❌ Erro ao abrir porta serial.\n");
+        return 0;
+    }
+
+    printf("📤 Enviando: ");
+    exibeDados(req, total);
+
+    if (serialWrite(req, total) != total) {
+        fprintf(stderr, "❌ Falha ao enviar dados.\n");
+        serialClose();
+        return 0;
+    }
+
+    char *resposta = lerResposta();
+    if (resposta) {
+        printf("✅ Resposta válida recebida.\n");
+    } else {
+        printf("❌ Nenhuma resposta válida.\n");
+    }
+
+    serialClose();
+    return 1;
 }

@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include "menu.h"
 #include "teste.h"
 #include "writecoils.h"
 #include "mapa.h"
+#include "falhas.h"
 
 #define PORTA_COM "/dev/ttyUSB0"
 #define BAUDRATE 9600
@@ -35,34 +35,42 @@ int main() {
 
         switch (opcao) {
             case '1':
-                printf("[Opção 1] Escrever múltiplos coils selecionada.\n");
+                printf("\n1. Escrever múltiplos coils (0x0F)\n");
                 sendPosicao(); // writecoils.h
                 break;
             case '2':
+                printf("\n2. Enviar comando com endereço inválido (teste de timeout)\n");
                 enviarEnderecoInvalido();
                 break;
             case '3':
+                printf("\n3. Enviar função inválida (teste de exceção 01)\n");
                 enviarFuncaoInvalida();
                 break;
             case '4':
+                printf("\n4. Enviar registrador inválido (teste de exceção 02)\n");
                 enviarRegistradorInvalido();
                 break;
             case '5':
+                printf("\n5. Enviar valor inválido (teste de exceção 03)\n");
                 enviarValorInvalido();
                 break;
             case '6':
+                printf("\n6. Enviar quadro com CRC inválido (teste de erro de integridade)\n");
                 enviarCRCInvalido();
                 break;
             case 'T':
             case 't':
+                printf("\nTeste Fixo\n");
                 teste();
                 break;
             case 'l':
             case 'L':
+                printf("\nTeste Mapa\n");
                 testeMapaCoils();
                 break;
             case 'w':
             case 'W':
+                printf("\nTeste Write Coils\n");
                 testeMultiplosCoils();
                 break;
             case 'x':
