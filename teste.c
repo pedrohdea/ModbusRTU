@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdint.h>
+#include "mapa.h"
+#include "writecoils.h"
+#include <string.h>
 
 #define PORTA_COM "/dev/ttyUSB0"
 #define BAUDRATE 9600
@@ -46,4 +50,32 @@ int teste() {
     serialClose();
     getchar();
     return 0;
+}
+
+void testeMultiplosCoils(void) {
+    char bits[17];  // 16 bits + terminador nulo
+    printf("🧪 Digite os 16 bits (ex: 1000000101000001): ");
+    scanf("%16s", bits);
+
+    if (strlen(bits) != 16) {
+        printf("❌ Você deve digitar exatamente 16 bits (0 ou 1).\n");
+        return;
+    }
+
+    uint8_t dados[2] = {0};
+
+    // Converte bits string em LSB-first para Modbus
+    for (int i = 0; i < 16; i++) {
+        if (bits[i] == '1') {
+            dados[i / 8] |= (1 << (i % 8));
+        }
+    }
+
+    printf("📍 Endereço inicial: 0\n");
+    printf("📏 Quantidade de coils: 16\n");
+    printf("📦 ByteCount: 2\n");
+    printf("📤 Dados para envio: ");
+    exibeBits(dados, 2);
+
+    escreverMultiplosCoils(0, 16, 2, dados);
 }

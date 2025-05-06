@@ -105,7 +105,7 @@ void funcaoWriteMultipleCoils(byte *receivedData) {
   resp[6] = crcResp & 0xFF;
   resp[7] = (uint8_t)(crcResp >> 8);
 
-  enviaFrame(resp, 8, "função write multiple coils");
+  enviaFrame(resp, 8, "resposta write multiple coils");
 }
 
 

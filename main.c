@@ -60,6 +60,9 @@ int main() {
             case 'l':
             case 'L':
                 testeMapaCoils();
+            case 'w':
+            case 'W':
+                testeMultiplosCoils();
             case 'x':
             case 'X':
                 printf("Saindo do programa...\n");

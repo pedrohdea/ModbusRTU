@@ -3,6 +3,8 @@
         "ostream": "c",
         "errno.h": "c",
         "crc16.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdint.h": "c",
+        "mapa.h": "c"
     }
 }
