@@ -13,7 +13,29 @@ Crc16 crc;
 
 #define NUM_COILS 16  // total real de saídas do seu hardware
 
+#define DATA_PIN   8 //SER
+#define CLOCK_PIN  9 //SRCLK
+#define LATCH_PIN 10 //RCLK
+
 byte endereco_escravo = 1;
+
+// Envia os 2 bytes para os 74HC595 (coils 0-15)
+void escreverShiftRegister(uint8_t leds[2]) {
+  digitalWrite(LATCH_PIN, LOW);
+  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, leds[1]); // byte mais significativo
+  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, leds[0]); // byte menos significativo
+  digitalWrite(LATCH_PIN, HIGH);
+}
+
+void blink(int sec) {
+  uint8_t leds[2] = {0b11111111, 0b00000000}; // Liga coils 0–7
+  escreverShiftRegister(leds); // liga tudo
+  delay(sec);
+
+  leds[0] = 0b00000000;
+  leds[1] = 0b11111111; // Liga coils 8–15
+  escreverShiftRegister(leds); // desliga tudo
+}
 
 void setup() {
   Serial.begin(BAUDRATE, SERIAL_8N2);
@@ -25,6 +47,12 @@ void setup() {
   
   pinMode(PIN_BIT0, INPUT);
   pinMode(PIN_BIT1, INPUT);
+
+  pinMode(DATA_PIN, OUTPUT);
+  pinMode(CLOCK_PIN, OUTPUT);
+  pinMode(LATCH_PIN, OUTPUT);
+
+  blink(1000);
 
   byte bit0 = digitalRead(PIN_BIT0);  // 0 ou 1
   byte bit1 = digitalRead(PIN_BIT1);  // 0 ou 1
@@ -89,8 +117,16 @@ void funcaoWriteMultipleCoils(byte *receivedData) {
     enviaExcecao(receivedData, 0x03);  // dado inválido
     return;
   }
+  blink(50);
 
-  // TODO: aplicar valores aos coils reais conforme os bits em receivedData[7..]
+  // Aplica valores aos coils reais conforme os bits em receivedData[7..]
+  // Copia os dados recebidos para o shift register
+  uint8_t dados[2] = {0};
+  for (int i = 0; i < byteCount && i < 2; i++) {
+    dados[i] = receivedData[7 + i];
+  }
+  dados[1] = ~dados[1];
+  escreverShiftRegister(dados);
 
   // Monta resposta conforme especificação Modbus (eco parcial da requisição)
   byte resp[8];

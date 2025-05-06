@@ -3,29 +3,57 @@
 #include <string.h>
 #include <stdio.h>
 
-void gerarMapaCoils(const char *comando, uint8_t resultado[16]) {
-    memset(resultado, 0, 16);  // Zera o vetor
+#include <stdint.h>
+#include <ctype.h>
 
-    if (strlen(comando) != 4) return;
+/**
+ * @brief Converte uma jogada tipo "A2H8" em dois vetores de 16 bytes
+ *        representando a ativação de colunas e linhas para duas casas.
+ *
+ * @param comando Ponteiro para string com exatamente 4 caracteres (ex: "A2H8").
+ * @param resultadoA Vetor de 16 posições representando a primeira casa (ex: A2).
+ * @param resultadoB Vetor de 16 posições representando a segunda casa (ex: H8).
+ */
+void gerarMapaUnitario(const char *comando, uint8_t resultado[2]) {
+    resultado[0] = 0;
+    resultado[1] = 0;
 
-    char col1 = toupper(comando[0]);
-    char lin1 = comando[1];
-    char col2 = toupper(comando[2]);
-    char lin2 = comando[3];
+    if (!comando || strlen(comando) != 2)
+        return;
 
-    // Colunas A-H mapeadas nos bits de resultado[0]
-    if (col1 >= 'A' && col1 <= 'H')
-        resultado[0] |= (1 << (col1 - 'A'));
-    if (col2 >= 'A' && col2 <= 'H')
-        resultado[0] |= (1 << (col2 - 'A'));
+    char col = toupper(comando[0]);
+    char lin = comando[1];
 
-    // Linhas 1-8 mapeadas nos bits de resultado[1]
-    if (lin1 >= '1' && lin1 <= '8')
-        resultado[1] |= (1 << (lin1 - '1'));
-    if (lin2 >= '1' && lin2 <= '8')
-        resultado[1] |= (1 << (lin2 - '1'));
+    if (col >= 'A' && col <= 'H')
+        resultado[0] |= (1 << (col - 'A'));
+
+    if (lin >= '1' && lin <= '8')
+        resultado[1] |= (1 << (lin - '1'));
 }
 
+void gerarMapaCoils(const char *comando, uint8_t resultadoA[16], uint8_t resultadoB[16]) {
+    memset(resultadoA, 0, 16);
+    memset(resultadoB, 0, 16);
+
+    if (!comando || strlen(comando) != 4)
+        return;
+
+    char pos1[3] = {0};  // ex: "B2"
+    char pos2[3] = {0};  // ex: "H8"
+
+    strncpy(pos1, comando, 2);
+    strncpy(pos2, comando + 2, 2);
+
+    uint8_t tempA[2] = {0}, tempB[2] = {0};
+    gerarMapaUnitario(pos1, tempA);  // posição A2
+    gerarMapaUnitario(pos2, tempB);  // posição H8
+
+    resultadoA[0] = tempA[0];
+    resultadoA[1] = tempA[1];
+
+    resultadoB[0] = tempB[0];
+    resultadoB[1] = tempB[1];
+}
 void exibeBits(uint8_t *dados, int tamanho) {
     for (int i = 0; i < tamanho; i++) {
         for (int bit = 0; bit < 8; bit++) {
@@ -37,13 +65,15 @@ void exibeBits(uint8_t *dados, int tamanho) {
 }
 
 void testeMapaCoils(void) {
-    char comando[5];
-    printf("Digite a jogada (ex: A2H8): ");
-    scanf("%4s", comando);
-    uint8_t resultado[16] = {0};
+    printf("Jogada: B2H8\n");
+    char comando[5] = "B2H8";
+    uint8_t resultadoA[16] = {0};
+    uint8_t resultadoB[16] = {0};
 
-    gerarMapaCoils(comando, resultado);
+    gerarMapaCoils(comando, resultadoA, resultadoB);
 
-    printf("🔎 Mapa de coils gerado para o comando \"%s\":\n", comando);
-    exibeBits(resultado, 2);
+    printf("🔎 Colunas ativadas por posição 1:");
+    exibeBits(resultadoA, 2);
+    printf("🔎 Colunas ativadas por posição 2:");
+    exibeBits(resultadoB, 2);
 }
