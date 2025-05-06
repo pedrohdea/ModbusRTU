@@ -125,49 +125,175 @@ Nas I/Os do Arduino serão conectados potenciômetros e LEDs, de acordo com a ap
 |:-----:|:-----:|:-----:|:-----:|:----:|
 |   1   |   3   |   2   |   1   |  7   |
 
-# Passo-a-passo detalhado do projeto ModbusRTU com matriz de LEDs
+# APRESENTAÇÃO
+
+**Curso:** Engenharia de Controle e Automação  
+**Instituição:** IFRS – Campus Farroupilha  
+**Disciplina:** Barramentos Industriais  
+**Aluno:** Pedro Henrique de Assumpção  
+**Professor:** Gustavo Künzel  
+**Data:** 06/05/2025
+
+---
+
+## Índice
+
+- Introdução  
+- Objetivos  
+- Justificativa  
+- Fundamentação Teórica  
+- Proposta  
+- Testes  
+- Desafios  
+- Referências  
+
+---
+
+## Introdução
+
+Utilizar conceitos de Modbus RTU e comunicação serial UART para desenvolver uma aplicação compatível com o protocolo Modbus RTU.  
+O objetivo é compreender como deve ser feita a programação do protocolo nos dispositivos.  
+Nas I/Os do Arduino serão conectados potenciômetros e LEDs, de acordo com a aplicação.
+
+---
+
+## Objetivos
+
+- Módulo de saídas digitais (8 a 16 saídas);  
+- Representadas por LEDs;  
+- Programa do PC deve permitir acionamento de uma ou mais saídas no mesmo comando;  
+- Função Modbus: 0x0F Write Multiple Coils.  
+
+---
+
+## Justificativa
+
+Desenvolver um sistema que permita o controle de uma matriz de 64 LEDs via protocolo Modbus RTU utilizando Arduino.  
+Além disso, busca-se compreender a implementação prática do protocolo e sua aplicabilidade em sistemas embarcados.
+
+---
+
+## Fundamentação Teórica
+
+### Protocolo Modbus RTU
+
+Modbus RTU é um protocolo de comunicação serial mestre-escravo que utiliza RS-485 para transmissão de dados.  
+Ele permite a comunicação entre dispositivos de forma eficiente e é padrão em sistemas industriais.
+
+### Comunicação Serial e RS-485
+
+A comunicação serial RS-485 permite a transmissão de dados em longas distâncias com alta imunidade a ruídos.  
+É ideal para aplicações industriais e é compatível com o protocolo Modbus RTU.
+
+### Write Multiple Coils (0x0F)
+
+[Slide reservado para estrutura da função 0x0F]
+
+---
+
+## Proposta
+
+### Componentes do Sistema
+
+- Arduino Uno  
+- Módulo RS-485 (MAX485)  
+- Matriz de LEDs 8x8  
+- Comunicação via serial com protocolo Modbus RTU  
+
+### Matriz de LEDs
+
+A matriz 8x8 possui 64 LEDs dispostos em linhas e colunas.  
+É controlada por registros que determinam quais LEDs devem ser acesos, permitindo diversos padrões visuais.
+
+---
+
+## Fluxograma explicado
+
+A seguir está descrito o passo-a-passo detalhado da comunicação entre o software Mestre e o dispositivo Escravo, usando o protocolo Modbus RTU para acionar uma matriz de LEDs:
 
 1. **Usuário abre o programa MESTRE**  
-   O software em C para Linux é executado no terminal pelo usuário.
+   O software escrito em C é executado no terminal Linux. Ele simula o papel de mestre Modbus RTU.
 
 2. **Navega no menu do terminal**  
-   Um menu interativo com opções de controle da matriz de LEDs é exibido.
+   O menu exibe opções interativas. O usuário pode selecionar funções específicas, como enviar comandos ou testar comunicação.
 
 3. **Seleciona a opção 1**  
-   O usuário escolhe a função de envio de comando para acender LEDs.
+   Escolha do comando para envio de um novo padrão de LEDs (função Modbus 0x0F - Write Multiple Coils).
 
 4. **Informa a posição de xadrez desejada (ex: D4)**  
-   O programa converte essa posição em um padrão de bits correspondente aos LEDs que devem acender.
+   A entrada do usuário é convertida para um padrão de 16 bits, refletindo o estado desejado dos LEDs.
 
-5. **Gera os bytes de dados dos coils (`resultadoA` e `resultadoB`)**  
-   O padrão de 16 bits é dividido em dois bytes, representando os estados dos LEDs.
+5. **Gera os bytes de dados (`resultadoA` e `resultadoB`)**  
+   O padrão binário é dividido em dois bytes. Cada bit representa o estado de um LED (aceso ou apagado).
 
-6. **Monta o quadro Modbus RTU (função 0x0F)**  
-   O mestre constrói o quadro com endereço do escravo, função, quantidade de coils e dados.
+6. **Monta o quadro Modbus RTU**  
+   O quadro contém: endereço do escravo, código da função, endereço inicial dos coils, quantidade, dados e CRC.
 
 7. **Calcula o CRC16 e adiciona ao quadro**  
-   Um código de verificação (CRC) é gerado usando a biblioteca `crc16.h` e anexado ao final do quadro.
+   O sistema usa uma função CRC (implementada em `crc16.h`) para garantir a integridade da mensagem.
 
-8. **Envia o quadro pela interface serial RS-485**  
-   O mestre transmite o quadro pela porta `/dev/ttyUSB0` para o Arduino escravo.
+8. **Envia via RS-485**  
+   O quadro completo é transmitido pela interface serial `/dev/ttyUSB0`, utilizando padrão RS-485.
 
-9. **Inicia contagem de tempo (timeout)**  
-   A função `millis_now()` é usada para garantir que a resposta do escravo chegue em tempo hábil.
+9. **Inicia timeout com `millis_now()`**  
+   Um contador é ativado para aguardar resposta dentro de tempo limite, evitando travamentos.
 
-10. **ESCRAVO (Arduino) recebe e valida o quadro**  
-    O Arduino verifica o endereço, função e CRC para confirmar se o quadro é válido e para ele.
+10. **ESCRAVO (Arduino) valida o quadro**  
+    O Arduino confere o endereço, função e CRC. Apenas responde se o quadro for válido e destinado a ele.
 
-11. **Escravo interpreta os dados e atualiza os LEDs**  
-    Os bytes recebidos (`resultadoA` e `resultadoB`) são usados para acender os LEDs correspondentes na matriz 8x8.
+11. **Escravo interpreta os dados e atualiza LEDs**  
+    Com base nos bytes recebidos, os LEDs da matriz 8x8 são ligados conforme o padrão solicitado.
 
 12. **Escravo monta e envia resposta Modbus**  
-    O Arduino responde com um quadro de confirmação contendo os dados esperados.
+    Um novo quadro é enviado ao mestre confirmando que os dados foram processados corretamente.
 
 13. **Mestre recebe a resposta e verifica o CRC**  
-    O software mestre valida a integridade da resposta com novo cálculo de CRC.
+    A resposta é validada novamente, garantindo que não houve corrupção na transmissão.
 
-14. **Mestre exibe mensagem de sucesso (“OK”)**  
-    Se a resposta for válida, o terminal exibe que os LEDs foram atualizados com sucesso.
+14. **Mestre exibe mensagem de sucesso ("OK")**  
+    Caso o CRC seja válido, o terminal informa que a operação foi bem-sucedida.
 
-15. **(Opcional) Tratamento de falhas**  
-    Se o tempo de resposta for excedido ou o CRC estiver errado, o mestre exibe erro e permite nova tentativa.
+15. **Tratamento de falhas**  
+    Em caso de erro no CRC ou ausência de resposta dentro do timeout, o sistema exibe erro e permite nova tentativa sem encerrar o programa.
+
+---
+
+## Testes
+
+### Procedimentos de Teste
+
+Foram realizados testes para verificar a correta comunicação entre mestre e escravo, bem como o funcionamento da matriz de LEDs.  
+Os testes confirmaram a eficácia da implementação.
+
+### Rotinas de Falhas
+
+O menu do Mestre trata erros como CRC inválido e ausência de resposta do escravo.  
+Em caso de falha, o sistema exibe mensagens de erro e permite nova tentativa sem travar a execução.
+
+---
+
+## Desafios
+
+### Troca do ESP32 pelo Arduino
+
+O ESP32 apresentou instabilidade com Modbus RTU e acionamento de LEDs (sinais de 3,3V).  
+Foi substituído pelo Arduino (5V), garantindo confiabilidade na comunicação e controle dos LEDs.
+
+### Melhorias no Programa Mestre
+
+O programa poderia ter variáveis dinâmicas como endereço do escravo e porta serial.  
+Tornar essas variáveis configuráveis aumentaria a flexibilidade e reutilização do código.
+
+### Endereçamento e Broadcast
+
+Implementado suporte a múltiplos escravos com endereços de 1 a 4.  
+Broadcast também foi testado com cuidado para evitar respostas no barramento, prevenindo colisões.
+
+---
+
+## Referências
+
+- MODBUS ORGANIZATION. *Modbus Application Protocol Specification V1.1b3*. [S.l.]: 2012. Disponível em: https://modbus.org. Acesso em: 5 maio 2025.  
+- DE ASSUMPÇÃO, Pedro Henrique. *ModbusRTU com Arduino*. GitHub, 2024. Disponível em: https://github.com/pedrohdea/ModbusRTU. Acesso em: 5 maio 2025.  
+- ARDUINO. *Arduino Uno Rev3 – Datasheet*. [S.l.]: 2020. Disponível em: https://store.arduino.cc/products/arduino-uno-rev3. Acesso em: 5 maio 2025.  
+
